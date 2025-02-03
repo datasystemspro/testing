@@ -1,0 +1,58 @@
+
+The following query retrieves information about tables, indexes, views, triggers, and sequences in any database schema:
+
+
+
+
+
+SELECT 
+    t.TABLE_SCHEMA AS Schema_Name, 
+    t.TABLE_NAME AS Table_Name, 
+    'Table' AS Object_Type,
+    NULL AS Object_Name
+FROM INFORMATION_SCHEMA.TABLES t
+WHERE t.TABLE_TYPE = 'BASE TABLE'
+
+UNION ALL
+
+SELECT 
+    v.TABLE_SCHEMA AS Schema_Name, 
+    v.TABLE_NAME AS Table_Name, 
+    'View' AS Object_Type,
+    v.TABLE_NAME AS Object_Name
+FROM INFORMATION_SCHEMA.VIEWS v
+
+UNION ALL
+
+SELECT 
+    s.name AS Schema_Name, 
+    t.name AS Table_Name, 
+    'Index' AS Object_Type,
+    i.name AS Object_Name
+FROM sys.indexes i
+JOIN sys.tables t ON i.object_id = t.object_id
+JOIN sys.schemas s ON t.schema_id = s.schema_id
+WHERE i.type_desc <> 'HEAP' -- Exclude heap tables (no clustered index)
+
+UNION ALL
+
+SELECT 
+    s.name AS Schema_Name, 
+    t.name AS Table_Name, 
+    'Trigger' AS Object_Type,
+    tr.name AS Object_Name
+FROM sys.triggers tr
+JOIN sys.tables t ON tr.parent_id = t.object_id
+JOIN sys.schemas s ON t.schema_id = s.schema_id
+
+UNION ALL
+
+SELECT 
+    s.name AS Schema_Name, 
+    o.name AS Table_Name, 
+    'Sequence' AS Object_Type,
+    sq.name AS Object_Name
+FROM sys.sequences sq
+JOIN sys.objects o ON sq.object_id = o.object_id
+JOIN sys.schemas s ON o.schema_id = s.schema_id
+ORDER BY Schema_Name, Table_Name, Object_Type;
