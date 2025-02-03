@@ -1,0 +1,59 @@
+
+-- The following query retrieves information about tables, indexes, views, triggers, and sequences in any database schema:
+
+
+WITH table_info AS (
+    SELECT 
+        table_schema AS schema_name,
+        table_name,
+        table_type
+    FROM information_schema.tables
+    WHERE table_schema NOT IN ('pg_catalog', 'information_schema')
+),
+index_info AS (
+    SELECT 
+        schemaname AS schema_name,
+        tablename AS table_name,
+        indexname AS index_name
+    FROM pg_indexes
+),
+view_info AS (
+    SELECT 
+        table_schema AS schema_name,
+        table_name AS view_name
+    FROM information_schema.views
+),
+trigger_info AS (
+    SELECT 
+        event_object_schema AS schema_name,
+        event_object_table AS table_name,
+        trigger_name
+    FROM information_schema.triggers
+),
+sequence_info AS (
+    SELECT 
+        sequence_schema AS schema_name,
+        sequence_name
+    FROM information_schema.sequences
+)
+SELECT 
+    t.schema_name,
+    t.table_name,
+    t.table_type,
+    i.index_name,
+    v.view_name,
+    trg.trigger_name,
+    s.sequence_name
+FROM table_info t
+LEFT JOIN index_info i 
+    ON t.schema_name = i.schema_name 
+    AND t.table_name = i.table_name
+LEFT JOIN view_info v 
+    ON t.schema_name = v.schema_name 
+    AND t.table_name = v.view_name
+LEFT JOIN trigger_info trg 
+    ON t.schema_name = trg.schema_name 
+    AND t.table_name = trg.table_name
+LEFT JOIN sequence_info s 
+    ON t.schema_name = s.schema_name
+ORDER BY t.schema_name, t.table_name;
