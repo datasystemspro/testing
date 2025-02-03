@@ -1,0 +1,35 @@
+SELECT 
+    n.nspname AS schema_name,
+    c.relname AS table_name,
+    CASE 
+        WHEN c.relkind = 'r' THEN 'table'
+        WHEN c.relkind = 'v' THEN 'view'
+        WHEN c.relkind = 'S' THEN 'sequence'
+        WHEN c.relkind = 'i' THEN 'index'
+        ELSE 'other'
+    END AS object_type,
+    c.relname AS object_name
+FROM 
+    pg_class c
+JOIN 
+    pg_namespace n ON c.relnamespace = n.oid
+WHERE 
+    c.relkind IN ('r', 'v', 'S', 'i')
+
+UNION ALL
+
+SELECT 
+    n.nspname AS schema_name,
+    t.relname AS table_name,
+    'trigger' AS object_type,
+    trg.tgname AS object_name
+FROM 
+    pg_trigger trg
+JOIN 
+    pg_class t ON trg.tgrelid = t.oid
+JOIN 
+    pg_namespace n ON t.relnamespace = n.oid
+WHERE 
+    NOT trg.tgisinternal
+ORDER BY 
+    schema_name, table_name, object_type, object_name;
